@@ -53,7 +53,9 @@ jobs:
           echo "pages_create_status=$status"
           cat /tmp/pages.json
           echo
-          if [ "$status" = "201" ] || [ "$status" = "409" ]; then
+          # 201 created, 409 already exists. 403 means this token cannot enable the site;
+          # deploy-pages still runs so a manually enabled site can publish.
+          if [ "$status" = "201" ] || [ "$status" = "409" ] || [ "$status" = "403" ]; then
             exit 0
           fi
           exit 1
