@@ -6,9 +6,9 @@
 
 ## 本草稿不做的事
 
-- 不合併、不部署、不開啟 GitHub Pages
-- 不設定 cron 或任何週期工作；只有手動測試，以及 push／pull request 的 CI
-- 不接付費服務，不索取憑證，不從網絡抓行情
+- 不合併進 `main`，不把倉庫改成公開
+- 不設定行情排程。CI 只在 push／pull request。Pages 只在這條草稿分支被推上時重建靜態頁
+- 不接付費行情，不索取憑證，不從網絡抓行情
 - 不對 StockCharts 帳戶做登入或擷取
 
 ## 安裝
@@ -36,6 +36,8 @@ CI 見 `.github/workflows/ci.yml`，只在 push 和 pull request 執行，沒有
 ```bash
 cd web && npm run dev
 ```
+
+私人 GitHub Pages 預覽（倉庫維持私人）：`https://nick-l-wh.github.io/jp-us-eod-screener/`。`.github/workflows/pages.yml` 在草稿分支 `cursor/jp-us-eod-screener-draft-8d68` 被推上時，以 `VITE_BASE=/jp-us-eod-screener/` 建置 `web` 並上傳。本地與 CI 不設這個變數，仍用相對路徑。這不是行情排程，也不會把掃描原文公開到網際網路；私人 Pages 只給能讀這個倉庫的已登入使用者。
 
 ## 命令列
 
