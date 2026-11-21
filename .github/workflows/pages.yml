@@ -11,8 +11,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # Enabling the site is a repository setting. This token stays inside the workflow.
-  administration: write
 
 concurrency:
   group: pages
