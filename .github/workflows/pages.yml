@@ -11,6 +11,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # Enabling the site is a repository setting. This token stays inside the workflow.
+  administration: write
 
 concurrency:
   group: pages
@@ -39,5 +41,23 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
+      - name: Enable private GitHub Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          status=$(curl -sS -o /tmp/pages.json -w "%{http_code}" \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"build_type":"workflow"}')
+          echo "pages_create_status=$status"
+          cat /tmp/pages.json
+          echo
+          if [ "$status" = "201" ] || [ "$status" = "409" ]; then
+            exit 0
+          fi
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
