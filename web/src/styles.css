@@ -105,14 +105,24 @@ pre { white-space: pre-wrap; font-family: ui-monospace, "Cascadia Mono", monospa
 .review-aside-note { margin: 12px 0 0; }
 
 .results-app .scans a {
-  display: inline-flex; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px;
-  background: var(--raise); color: var(--text); text-decoration: none;
+  display: inline-flex; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px;
+  background: transparent; color: var(--text); text-decoration: none; font-size: 14px;
 }
-.results-app .scans a.active { background: var(--brass); color: var(--ink); }
+.results-app .scans a.active { border-color: #7eb6ff; color: #d7e8ff; }
 .session-date { margin: 0; font-size: 22px; font-variant-numeric: tabular-nums; }
-.results-count { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; font-variant-numeric: tabular-nums; }
-.results-count strong { font-size: 18px; }
+.market-row { display: flex; gap: 16px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+.market-switch { display: flex; gap: 8px; }
+.market-switch a {
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 16px; text-decoration: none; color: var(--text);
+}
+.market-switch a.active { border-color: #7eb6ff; box-shadow: inset 0 0 0 1px #7eb6ff; }
+.results-count { margin: 0; font-variant-numeric: tabular-nums; }
+.tiny-note { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+.jp-empty { margin: 18px 0; font-size: 18px; }
+.local-fields { font-size: 14px; }
+.local-fields summary { cursor: pointer; color: var(--muted); }
 .column-picker, .pager { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0 12px; align-items: center; }
+.results-app table.dense { min-width: 560px; }
 .dense td, .dense th { padding: 5px 8px; font-size: 13px; }
 .dense td.reason { white-space: normal; min-width: 280px; max-width: 520px; }
 .finding { margin: 0 0 12px; line-height: 1.5; }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { preflightCsv, toCsv, type PreflightReport } from "./csv";
 import { cohortLabel, diffLabel, formatNumber, formatRank, formatVolume, statusLabel } from "./format";
 import { Review } from "./Review";
-import { SCAN_ROUTES, ScanResults } from "./ScanResults";
+import { SCAN_ROUTES, ScanResults, type MarketCode } from "./ScanResults";
 import {
   DEMO_DISCLAIMER,
   EMPTY_REAL_MESSAGE,
@@ -50,25 +50,42 @@ const EXTRA: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
-function usePageRoute(): string {
+type PageRoute =
+  | { kind: "review" }
+  | { kind: "workspace" }
+  | { kind: "scan"; market: MarketCode; scanId: string };
+
+export function parseHashRoute(hash: string): PageRoute {
+  const id = hash.replace(/^#\/?/, "").split(/[?#]/)[0];
+  const parts = id.split("/").filter(Boolean);
+  if (parts[0] === "review") return { kind: "review" };
+  if (parts[0] === "workspace") return { kind: "workspace" };
+  let market: MarketCode = "US";
+  let scan = parts[0] || "pullback";
+  if (parts[0] === "us" || parts[0] === "jp") {
+    market = parts[0] === "jp" ? "JP" : "US";
+    scan = parts[1] || "pullback";
+  }
+  if (!SCAN_ROUTES.some((item) => item.id === scan)) scan = "pullback";
+  return { kind: "scan", market, scanId: scan };
+}
+
+function usePageRoute(): PageRoute {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
     const onHash = () => setHash(window.location.hash);
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-  const id = hash.replace(/^#\/?/, "").split(/[?#]/)[0];
-  if (id === "review" || id === "workspace") return id;
-  if (SCAN_ROUTES.some((item) => item.id === id)) return id;
-  return "pullback";
+  return parseHashRoute(hash);
 }
 
 export function App() {
   const route = usePageRoute();
   const [surface, setSurface] = useState<Surface>("review");
   useEffect(() => {
-    if (route === "review" || route === "workspace") setSurface(route);
-  }, [route]);
+    if (route.kind === "review" || route.kind === "workspace") setSurface(route.kind);
+  }, [route.kind]);
   const [demoOn, setDemoOn] = useState(false);
   const [demoSnap, setDemoSnap] = useState<Snapshot | null>(null);
   const [realSnap, setRealSnap] = useState<Snapshot | null>(null);
@@ -168,7 +185,9 @@ export function App() {
 
   const selectedRow = rows.find((row) => row.qualified_symbol === selected) ?? result?.dropped.find((row) => row.qualified_symbol === selected) ?? null;
 
-  if (route !== "review" && route !== "workspace") return <ScanResults key={route} scanId={route} />;
+  if (route.kind === "scan") {
+    return <ScanResults key={`${route.market}-${route.scanId}`} scanId={route.scanId} market={route.market} />;
+  }
 
   return (
     <div className="app">

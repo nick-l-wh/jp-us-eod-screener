@@ -93,7 +93,7 @@ def test_review_publishes_no_raw_prices_or_exports():
 
 def test_results_are_the_landing_and_demo_stays_separate():
     app = APP_PATH.read_text(encoding="utf-8")
-    assert 'return "pullback"' in app
+    assert '|| "pullback"' in app
     assert "ScanResults" in app
     assert "2026-11-20 資料核對" in app
     assert "篩選工作台" in app

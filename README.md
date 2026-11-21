@@ -37,7 +37,7 @@ CI 見 `.github/workflows/ci.yml`，只在 push 和 pull request 執行，沒有
 cd web && npm run dev
 ```
 
-靜態預覽：`https://nick-l-wh.github.io/jp-us-eod-screener/`。打開先到 2026-11-20 的六條結果（預設 Pullback）。每條分開列參考表、引擎結果、重疊、未定和未過的條件。覆蓋數字在 `#/review`，而且已改成完整歷史重收後的數：170 隻、202950 根、165 隻至少 200 根、149 隻 1291 根、173 列收市可比較，SNDK 的目標日收市是空的。原始行情與帳戶匯出不放進網站。篩選工作台在 `#/workspace`，示範資料另外標明。`.github/workflows/pages.yml` 在草稿分支 `cursor/jp-us-eod-screener-draft-8d68` 被推上時，以 `VITE_BASE=/jp-us-eod-screener/` 建置 `web` 並上傳。本地與 CI 不設這個變數，仍用相對路徑。倉庫維持私人。這不是行情排程。頁上不提供整包行情下載。
+靜態預覽：`https://nick-l-wh.github.io/jp-us-eod-screener/`。打開先到 2026-11-20 的六條結果（預設美股 Pullback）。每頁只有掃描、日股／美股、日期，以及代號、名稱、成交量、SCTR。比較說明收在「比較詳情」。日股尚未計算。覆蓋更正仍在 `#/review`：170 隻、202950 根、165 隻至少 200 根、149 隻 1291 根、173 列收市可比較，SNDK 的目標日收市是空的。名稱和成交量不放進網站，可用本機 CSV 補上且不上傳。篩選工作台在 `#/workspace`。`.github/workflows/pages.yml` 在草稿分支 `cursor/jp-us-eod-screener-draft-8d68` 被推上時，以 `VITE_BASE=/jp-us-eod-screener/` 建置 `web` 並上傳。本地與 CI 不設這個變數，仍用相對路徑。倉庫維持私人。這不是行情排程。頁上不提供整包行情下載。
 
 ## 命令列
 

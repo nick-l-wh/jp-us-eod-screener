@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const SCAN_ROUTES = [
   { id: "adx", en: "ADX", zh: "ADX" },
@@ -8,6 +8,8 @@ export const SCAN_ROUTES = [
   { id: "weak", en: "Weak ADX", zh: "弱 ADX" },
   { id: "young", en: "Young Trend", zh: "初生趨勢" },
 ] as const;
+
+export type MarketCode = "US" | "JP";
 
 type Clause = {
   id: string;
@@ -63,28 +65,6 @@ export type CompareReport = {
   alternate_only_within_sample?: number;
   reference_indicator_passed?: number;
 };
-
-const MEMBERSHIP: Record<string, string> = {
-  overlap: "重疊",
-  missing: "參考有、引擎無",
-  extra: "引擎多出",
-  within_sample_extra: "樣本內多出",
-  indeterminate: "未定",
-  outside_reference_not_hit: "樣本內未命中",
-  reference_only: "只有參考表",
-};
-
-const COLUMNS = [
-  ["symbol", "代號"],
-  ["name", "名稱"],
-  ["exchange", "交易所"],
-  ["sector", "板塊"],
-  ["industry", "產業"],
-  ["reference_sctr", "參考 SCTR"],
-  ["reference_universe", "族群"],
-  ["membership", "比較"],
-  ["decision", "判定"],
-] as const;
 
 function asset(path: string): string {
   const base = import.meta.env.BASE_URL || "/";
@@ -163,7 +143,7 @@ function isReport(value: unknown): value is CompareReport {
   return typeof row.scan_id === "string" && Array.isArray(row.rows) && typeof row.session_date === "string";
 }
 
-export function ScanResults({ scanId }: { scanId: string }) {
+export function ScanResults({ scanId, market }: { scanId: string; market: MarketCode }) {
   const [published, setPublished] = useState<CompareReport | null>(null);
   const [publishedState, setPublishedState] = useState<"loading" | "missing" | "ready">("loading");
   const [dataVersion, setDataVersion] = useState<Record<string, unknown> | null>(null);
@@ -171,39 +151,27 @@ export function ScanResults({ scanId }: { scanId: string }) {
   const [localRows, setLocalRows] = useState<CompareRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(500);
-  const [page, setPage] = useState(0);
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "symbol", dir: "asc" });
-  const [visible, setVisible] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(COLUMNS.map(([key]) => [key, !["name", "exchange", "sector", "industry"].includes(key)])),
-  );
-  const [showColumns, setShowColumns] = useState(false);
-  const [showNonHits, setShowNonHits] = useState(false);
-  const [openSymbol, setOpenSymbol] = useState<string | null>(null);
   const meta = SCAN_ROUTES.find((item) => item.id === scanId) ?? SCAN_ROUTES[0];
+  const marketSlug = market === "JP" ? "jp" : "us";
 
   useEffect(() => {
     const injected = window.sessionStorage.getItem("screener-comparison-json");
     if (injected) {
       try {
         const parsed = JSON.parse(injected) as CompareReport;
-        if (isReport(parsed) && parsed.scan_id === scanId) {
-          setLocalReport(parsed);
-        }
+        if (isReport(parsed) && parsed.scan_id === scanId) setLocalReport(parsed);
       } catch {
         setError("本機比較 JSON 無法讀取");
       }
     }
     fetch(asset("comparison/2026-11-20.json"))
-      .then((response) => {
-        if (!response.ok) {
-          setPublishedState("missing");
-          return null;
-        }
-        return response.json();
-      })
+      .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (!payload) return;
+        if (!payload) {
+          setPublishedState("missing");
+          return;
+        }
         if (payload.data_version) setDataVersion(payload.data_version);
         const scans = Array.isArray(payload.scans) ? payload.scans : null;
         const report = scans
@@ -214,7 +182,6 @@ export function ScanResults({ scanId }: { scanId: string }) {
         if (isReport(report) && report.scan_id === scanId) {
           setPublished(report);
           setPublishedState("ready");
-          if ((report.counts?.reference ?? 0) === 0) setShowNonHits(true);
         } else {
           setPublishedState("missing");
         }
@@ -223,60 +190,33 @@ export function ScanResults({ scanId }: { scanId: string }) {
   }, [scanId]);
 
   const report = localReport ?? published;
-  const rows = useMemo(() => {
-    const source = report?.rows ?? localRows ?? [];
+  const referenceRows = useMemo(() => {
     const localBySymbol = new Map((localRows ?? []).map((row) => [row.symbol, row]));
-    const merged = source.map((row) => {
+    const base = report ? report.rows.filter((row) => row.in_reference) : (localRows ?? []);
+    return base.map((row) => {
       const local = localBySymbol.get(row.symbol);
       if (!local) return row;
       return {
         ...row,
         name: local.name || row.name,
-        exchange: local.exchange || row.exchange,
-        sector: local.sector || row.sector,
-        industry: local.industry || row.industry,
-        local_close: local.local_close,
-        local_volume: local.local_volume,
+        local_volume: local.local_volume || row.local_volume,
+        reference_sctr: row.reference_sctr ?? local.reference_sctr,
       };
     });
-    return merged.filter((row) => showNonHits || row.in_reference || row.membership === "reference_only");
-  }, [report, localRows, showNonHits]);
+  }, [report, localRows]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const matched = needle
-      ? rows.filter((row) =>
-          `${row.symbol} ${row.name} ${row.exchange} ${row.sector} ${row.industry} ${row.membership}`.toLowerCase().includes(needle),
-        )
-      : rows;
+      ? referenceRows.filter((row) => `${row.symbol} ${row.name}`.toLowerCase().includes(needle))
+      : referenceRows;
     return [...matched].sort((left, right) => compareValues(left, right, sort.key, sort.dir));
-  }, [rows, query, sort]);
+  }, [referenceRows, query, sort]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage = Math.min(page, pageCount - 1);
-  const visibleRows = filtered.slice(safePage * pageSize, safePage * pageSize + pageSize);
   const session = report?.session_date ?? "2026-11-20";
-  const referenceCount = report?.counts.reference ?? localRows?.length ?? null;
-  const hasTable = visibleRows.length > 0 || (report?.rows.length ?? localRows?.length ?? 0) > 0;
-  const showingLocalPrices = (localRows ?? report?.rows ?? []).some((row) => row.local_close || row.local_volume);
 
-  async function onComparisonFile(file: File | undefined) {
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text()) as unknown;
-      const reportValue = Array.isArray(parsed)
-        ? parsed.find((item) => isReport(item) && item.scan_id === scanId)
-        : parsed;
-      if (!isReport(reportValue) || reportValue.scan_id !== scanId) {
-        setError("這份比較檔不是這一頁的掃描");
-        return;
-      }
-      setLocalReport(reportValue);
-      setError(null);
-      setPage(0);
-    } catch {
-      setError("比較檔不是 JSON");
-    }
+  function toggleSort(key: string) {
+    setSort((current) => ({ key, dir: current.key === key && current.dir === "asc" ? "desc" : "asc" }));
   }
 
   async function onReferenceFile(file: File | undefined) {
@@ -287,276 +227,136 @@ export function ScanResults({ scanId }: { scanId: string }) {
       return;
     }
     setLocalRows(parsed);
-    setVisible((current) => ({ ...current, name: true, exchange: true, sector: true, industry: true }));
     setError(null);
-    setPage(0);
   }
 
   return (
-    <div className="app results-app" data-testid="scan-results">
+    <div className="app results-app" data-testid="scan-results" data-market={market}>
       <header className="top">
         <div>
           <p className="eyebrow">日美收市篩選</p>
           <h1 data-testid="page-title">{meta.en}</h1>
-          <p className="quiet">{meta.zh} · 參考結果與引擎結果分開列出</p>
         </div>
         <p className="session-date" data-testid="session-date">{formatSession(session)}</p>
       </header>
       <nav className="scans" aria-label="六條掃描">
         {SCAN_ROUTES.map((item) => (
-          <a key={item.id} className={item.id === scanId ? "active" : ""} href={`#/${item.id}`} data-testid={`scan-link-${item.id}`}>
-            <span>{item.en}</span>
+          <a
+            key={item.id}
+            className={item.id === scanId ? "active" : ""}
+            href={`#/${marketSlug}/${item.id}`}
+            data-testid={`scan-link-${item.id}`}
+          >
+            {item.en}
           </a>
         ))}
       </nav>
-      <div className="results-count" data-testid="result-counts">
-        <strong>參考 {referenceCount === null ? "—" : referenceCount}</strong>
-        <span>引擎通過 {report ? report.counts.engine_pass : "—"}</span>
-        <span>重疊 {report ? report.counts.overlap : "—"}</span>
-        <span>參考有、引擎無 {report ? report.counts.missing : "—"}</span>
-        <span>多出 {report ? report.counts.extra : "—"}</span>
-        <span>樣本內多出 {report ? report.counts.within_sample_extra : "—"}</span>
-        <span>未定 {report ? report.counts.indeterminate : "—"}</span>
+      <div className="market-row">
+        <div className="market-switch" role="tablist" aria-label="市場">
+          <a href={`#/jp/${scanId}`} role="tab" aria-selected={market === "JP"} className={market === "JP" ? "active" : ""} data-testid="market-JP">日股</a>
+          <a href={`#/us/${scanId}`} role="tab" aria-selected={market === "US"} className={market === "US" ? "active" : ""} data-testid="market-US">美股</a>
+        </div>
+        {market === "US" ? (
+          <p className="results-count" data-testid="result-counts">參考結果 {report ? referenceRows.length : "—"}</p>
+        ) : null}
       </div>
-      {report ? (
-        <p className="finding" data-testid="scan-finding">
-          參考表 {report.counts.reference} 列裡，其餘條件通過 {report.reference_indicator_passed ?? "—"} 列。
-          引擎確認通過 {report.counts.engine_pass}。重疊 {report.counts.overlap}。
-          另一種括號讀法在這 170 隻裡會多出 {report.alternate_only_within_sample ?? 0} 隻，那些不在參考表。
-          全市場的多出和漏掉沒有計算。
-        </p>
-      ) : null}
-      {report?.layout_fixture ? <p className="warn">版面夾具，不是 2026-11-20 的市場結果。</p> : null}
-      {error ? <p className="error-banner">{error}</p> : null}
-      {!report && !localRows && publishedState !== "loading" ? (
-        <section className="blocked" data-testid="comparison-blocked">
-          <h2>這一頁還沒有 2026-11-20 的引擎比較</h2>
-          <p>
-            現有附件只有 30 個交易日，不夠 SMA(200) 的暖機。沒有用那段資料計算命中，也沒有把參考表抄進網站。
-            全市場多出、漏掉，以及 ADX 參考為 0 是否成立，都還沒有計算。
-          </p>
-          <p className="quiet">參考 CSV 可以在這台瀏覽器打開，不會上傳。名稱、收市和成交量不會先放在網站上。</p>
-        </section>
-      ) : null}
-      <div className="toolbar">
-        <label>
-          每頁
-          <select
-            aria-label="每頁列數"
-            value={pageSize}
-            onChange={(event) => {
-              setPageSize(Number(event.target.value));
-              setPage(0);
-            }}
-          >
-            {[50, 100, 500].map((size) => (
-              <option key={size} value={size}>{size}</option>
-            ))}
-          </select>
-        </label>
-        <input
-          aria-label="搜尋結果"
-          placeholder="搜尋代號、名稱、板塊"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setPage(0);
-          }}
-        />
-        <button type="button" onClick={() => setShowColumns((value) => !value)} data-testid="columns-toggle">欄位</button>
-        <label className="file">
-          本機參考 CSV
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            data-testid="reference-csv"
-            onChange={(event) => void onReferenceFile(event.target.files?.[0])}
-          />
-        </label>
-        <label className="file">
-          本機比較 JSON
-          <input
-            type="file"
-            accept="application/json,.json"
-            data-testid="comparison-json"
-            onChange={(event) => void onComparisonFile(event.target.files?.[0])}
-          />
-        </label>
-        <label>
-          <input type="checkbox" checked={showNonHits} onChange={(event) => setShowNonHits(event.target.checked)} />
-          顯示未命中
-        </label>
-      </div>
-      {showColumns ? (
-        <div className="column-picker">
-          {COLUMNS.map(([key, label]) => (
-            <label key={key}>
+      {market === "JP" ? (
+        <p className="jp-empty" data-testid="jp-empty">尚未產生日股結果</p>
+      ) : (
+        <>
+          <p className="tiny-note">參考結果 · SCTR 為參考值</p>
+          {error ? <p className="error-banner">{error}</p> : null}
+          <div className="toolbar">
+            <input
+              aria-label="搜尋結果"
+              placeholder="搜尋代號或名稱"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <details className="local-fields">
+              <summary>補上名稱與成交量</summary>
+              <p className="quiet">選擇本機的結果 CSV。檔案留在這台瀏覽器，不會上傳。</p>
               <input
-                type="checkbox"
-                checked={visible[key]}
-                onChange={() => setVisible((current) => ({ ...current, [key]: !current[key] }))}
+                type="file"
+                accept=".csv,text/csv"
+                data-testid="reference-csv"
+                onChange={(event) => void onReferenceFile(event.target.files?.[0])}
               />
-              {label}
-            </label>
-          ))}
-        </div>
-      ) : null}
-      {hasTable ? (
-        <div className="table-wrap">
-          <table className="dense" data-testid="result-table">
-            <thead>
-              <tr>
-                <th>原因</th>
-                {COLUMNS.filter(([key]) => visible[key]).map(([key, label]) => (
-                  <th key={key}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSort((current) => ({
-                          key,
-                          dir: current.key === key && current.dir === "asc" ? "desc" : "asc",
-                        }))
-                      }
-                    >
-                      {label}
-                    </button>
-                  </th>
-                ))}
-                {showingLocalPrices ? <th>本機收市</th> : null}
-                {showingLocalPrices ? <th>本機成交量</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => (
-                <Fragment key={row.symbol}>
-                  <tr onClick={() => setOpenSymbol((current) => (current === row.symbol ? null : row.symbol))}>
-                    <td className="reason">{reasonFor(row)}</td>
-                    {visible.symbol ? <td>{row.symbol}</td> : null}
-                    {visible.name ? <td>{row.name}</td> : null}
-                    {visible.exchange ? <td>{row.exchange}</td> : null}
-                    {visible.sector ? <td>{row.sector}</td> : null}
-                    {visible.industry ? <td>{row.industry}</td> : null}
-                    {visible.reference_sctr ? <td>{row.reference_sctr ?? "—"}</td> : null}
-                    {visible.reference_universe ? <td>{row.reference_universe || "—"}</td> : null}
-                    {visible.membership ? <td>{MEMBERSHIP[row.membership] ?? row.membership}</td> : null}
-                    {visible.decision ? <td>{decisionLabel(row)}</td> : null}
-                    {showingLocalPrices ? <td>{row.local_close || "—"}</td> : null}
-                    {showingLocalPrices ? <td>{row.local_volume || "—"}</td> : null}
+            </details>
+          </div>
+          <div className="table-wrap">
+            <table className="dense" data-testid="result-table">
+              <thead>
+                <tr>
+                  <th><button type="button" onClick={() => toggleSort("symbol")}>代號</button></th>
+                  <th><button type="button" onClick={() => toggleSort("name")}>名稱</button></th>
+                  <th><button type="button" onClick={() => toggleSort("local_volume")}>成交量</button></th>
+                  <th><button type="button" onClick={() => toggleSort("reference_sctr")}>SCTR</button></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row) => (
+                  <tr key={row.symbol}>
+                    <td>{row.symbol}</td>
+                    <td>{row.name || "—"}</td>
+                    <td>{row.local_volume || "—"}</td>
+                    <td>{row.reference_sctr ?? "—"}</td>
                   </tr>
-                  {openSymbol === row.symbol ? (
-                    <tr key={`${row.symbol}-detail`} className="detail-row">
-                      <td colSpan={COLUMNS.filter(([key]) => visible[key]).length + (showingLocalPrices ? 2 : 0) + 1}>
-                        <PredicateDetail row={row} />
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-      {hasTable ? (
-        <div className="pager">
-          <button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>上一頁</button>
-          <span data-testid="page-indicator">{safePage + 1} / {pageCount} · {filtered.length} 列</span>
-          <button type="button" disabled={safePage + 1 >= pageCount} onClick={() => setPage((value) => value + 1)}>下一頁</button>
-        </div>
-      ) : null}
-      <details className="provenance" data-testid="provenance">
-        <summary>技術出處與仍未定的部分</summary>
-        {report ? (
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {publishedState !== "loading" && filtered.length === 0 ? (
+            <p className="quiet" data-testid="reference-empty">{query ? "沒有符合的代號" : "參考結果 0"}</p>
+          ) : null}
+        </>
+      )}
+      <details className="provenance" data-testid="comparison-detail">
+        <summary>比較詳情</summary>
+        {market === "JP" ? (
+          <p>日股這六條還沒有計算。不會用美股代號代替，也不會把美元門檻套成日圓。</p>
+        ) : report ? (
           <>
-            <p>{report.rank_mode_label}。覆蓋：{coverageLabel(report.candidate_coverage)}。{report.price_basis}</p>
+            <p>
+              這張表是參考結果，不是引擎確認命中。參考 {report.counts.reference}。
+              其餘條件通過 {report.reference_indicator_passed ?? "—"}。
+              引擎確認通過 {report.counts.engine_pass}。重疊 {report.counts.overlap}。
+            </p>
+            <p>{report.rank_mode_label}。{report.price_basis}</p>
+            <p>
+              另一種括號讀法在這批代號裡會多出 {report.alternate_only_within_sample ?? 0} 隻，那些不在參考表。
+              全市場的多出和漏掉沒有計算。參考為 0 {report.zero_reference_validated ? "已在全市場核對" : "尚未被全市場驗證"}。
+            </p>
             {dataVersion ? (
               <p>
-                資料版本 {String(dataVersion.package ?? "")}，{String(dataVersion.created_at_asia_taipei ?? "")}。
-                {String(dataVersion.symbols ?? "")} 隻、{String(dataVersion.bars ?? "")} 根；
-                至少 200 根 {String(dataVersion.warmup_at_least_200 ?? "")}；
-                1291 根 {String(dataVersion.bars_1291 ?? "")}。
+                資料版本 {String(dataVersion.package ?? "")}。{String(dataVersion.symbols ?? "")} 隻、{String(dataVersion.bars ?? "")} 根；
+                至少 200 根 {String(dataVersion.warmup_at_least_200 ?? "")}；1291 根 {String(dataVersion.bars_1291 ?? "")}。
                 {String(dataVersion.supersedes ?? "")}
               </p>
             ) : null}
-            <p>
-              全市場多出{report.full_market_extra_computed ? "已" : "未"}計算。
-              全市場漏掉{report.full_market_missing_computed ? "已" : "未"}計算。
-              參考為 0 {report.zero_reference_validated ? "已在全市場核對" : "尚未被全市場驗證"}。
-            </p>
-            {report.grouping_warning ? <p>{report.grouping_warning}</p> : null}
             <ul>
               {report.blockers.map((item) => <li key={item}>{item}</li>)}
             </ul>
+            <ul>
+              {report.rows.filter((row) => row.in_reference && (row.indicator_status === "blocked_input" || row.confirmed_failed.length > 0)).map((row) => (
+                <li key={row.symbol}>{row.symbol}：{reasonFor(row)}</li>
+              ))}
+            </ul>
           </>
         ) : (
-          <p>
-            網站沒有存放 2026-11-20 的行情、成交量或完整參考表。本機 CSV 只留在瀏覽器。
-            日股 Squeeze 與 Turtle 仍是「需要日股適配參數」，不會把美元門檻套到日圓。
-          </p>
+          <p>美股比較尚未載入。</p>
         )}
-        <p className="quiet">示範工作台在 <a href="#/">篩選工作台</a>，與這六頁的比較無關。</p>
+        <p className="quiet"><a href="#/workspace">篩選工作台</a></p>
       </details>
     </div>
   );
 }
 
-function PredicateDetail({ row }: { row: CompareRow }) {
-  if (row.membership === "reference_only") {
-    return <p>這列來自本機參考表。引擎尚未計算，所以沒有條件差異。</p>;
-  }
-  return (
-    <div className="predicate">
-      <p>
-        其餘條件：{outcomeLabel(row.technical_outcome)}。
-        引擎判定：{outcomeLabel(row.engine_outcome)}。
-        {row.grouping_causal ? `另一讀法：${outcomeLabel(row.alternate_outcome)}，兩種分組不同。` : "兩種分組沒有把這列拆開。"}
-      </p>
-      {row.confirmed_failed.length ? (
-        <>
-          <h3>已確認未過</h3>
-          <ul>
-            {row.confirmed_failed.map((item) => (
-              <li key={item.id} data-status="fail">{item.label}：{tidy(item.detail) || item.status}</li>
-            ))}
-          </ul>
-        </>
-      ) : <p>沒有已確認未過的條件。</p>}
-      {row.unresolved.length ? (
-        <>
-          <h3>資料未齊，不能判定</h3>
-          <ul>
-            {row.unresolved.map((item) => (
-              <li key={item.id} data-status="unavailable">{item.label}：{item.detail || item.code}</li>
-            ))}
-          </ul>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
 function reasonFor(row: CompareRow): string {
-  if (row.indicator_status === "blocked_input") {
-    return row.unresolved[0]?.detail || "這一列的輸入不能計算";
-  }
+  if (row.indicator_status === "blocked_input") return row.unresolved[0]?.detail || "這一列的輸入不能計算";
   if (row.confirmed_failed.length) {
-    const failed = row.confirmed_failed
-      .slice(0, 2)
-      .map((item) => `${item.label}${item.detail ? `（${tidy(item.detail)}）` : ""}`)
-      .join("；");
-    const alternate = row.grouping_causal && row.alternate_outcome === "match" ? " 另一讀法會通過。" : "";
-    return `已確認未過：${failed}${alternate}`;
+    return row.confirmed_failed.slice(0, 2).map((item) => `${item.label}${item.detail ? `（${tidy(item.detail)}）` : ""}`).join("；");
   }
-  if (row.decision === "engine_pass") {
-    return "引擎通過。排名用的是參考 SCTR，不是本地族群排名。";
-  }
-  const codes = new Set(row.unresolved.map((item) => item.code));
-  if (row.indicator_status === "passed" && codes.has("missing_market_cap")) {
-    return "其餘條件通過。沒有 2026-11-20 的市值，不能把這列算成命中。";
-  }
-  if (row.indicator_status === "passed" && (codes.has("security_type_not_in_export") || codes.has("etf_group_not_in_export"))) {
-    return "其餘條件通過。結果表沒有股票或 ETF 類型，不能把這列算成命中。";
-  }
-  if (row.membership === "reference_only") return "這列只來自本機參考表，引擎還沒有比較。";
   return row.unresolved[0]?.detail || "未定";
 }
 
@@ -572,34 +372,16 @@ function tidy(detail?: string | null): string {
   });
 }
 
-function outcomeLabel(value?: string | null): string {
-  if (value === "match") return "通過";
-  if (value === "no_match") return "未過";
-  if (value === "insufficient_warmup") return "暖機不足";
-  if (value === "unmet_dependency") return "未定";
-  return value || "—";
-}
-
-function decisionLabel(row: CompareRow): string {
-  if (row.decision === "engine_pass") return "引擎通過";
-  if (row.decision === "confirmed_failed_condition") return "已確認未過";
-  if (row.decision === "not_computed") return "引擎未計算";
-  return "未定";
-}
-
-function coverageLabel(value: string): string {
-  if (value === "full_market") return "全市場";
-  if (value === "selection_biased_hit_union") return "其他掃描命中的聯集，不是全市場";
-  return value;
-}
-
 function compareValues(left: CompareRow, right: CompareRow, key: string, dir: "asc" | "desc"): number {
-  const a = String((left as Record<string, unknown>)[key] ?? "");
-  const b = String((right as Record<string, unknown>)[key] ?? "");
-  const numeric = Number(a);
-  const other = Number(b);
-  const result = Number.isFinite(numeric) && Number.isFinite(other) && a !== "" && b !== ""
-    ? numeric - other
-    : a.localeCompare(b);
+  const rawLeft = (left as Record<string, unknown>)[key];
+  const rawRight = (right as Record<string, unknown>)[key];
+  const a = rawLeft === null || rawLeft === undefined || rawLeft === "" ? null : Number(rawLeft);
+  const b = rawRight === null || rawRight === undefined || rawRight === "" ? null : Number(rawRight);
+  let result = 0;
+  if (a !== null && b !== null && Number.isFinite(a) && Number.isFinite(b) && key !== "symbol" && key !== "name") {
+    result = a - b;
+  } else {
+    result = String(rawLeft ?? "").localeCompare(String(rawRight ?? ""));
+  }
   return dir === "asc" ? result : -result;
 }

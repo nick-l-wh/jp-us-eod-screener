@@ -276,11 +276,19 @@ def test_hit_sample_is_not_called_a_local_sctr():
     assert "完整 SCTR" in " ".join(report["blockers"])
 
 
-def test_six_routes_exist_without_replacing_the_review_landing():
+def test_six_routes_stay_sparse_and_market_scoped():
     page = Path("web/src/ScanResults.tsx").read_text(encoding="utf-8")
     app = Path("web/src/App.tsx").read_text(encoding="utf-8")
     for route in ("adx", "pullback", "squeeze", "turtle", "weak", "young"):
         assert f'id: "{route}"' in page
-    assert 'return "pullback"' in app
+    assert '|| "pullback"' in app
     assert "ScanResults" in app
-    assert "現有附件只有 30 個交易日" in page
+    assert "日股" in page and "美股" in page
+    assert "港股" not in page and "澳股" not in page
+    assert "比較詳情" in page
+    assert "尚未產生日股結果" in page
+    assert ">代號</button>" in page
+    assert ">名稱</button>" in page
+    assert ">成交量</button>" in page
+    assert ">SCTR</button>" in page
+    assert "in_reference" in page
