@@ -86,7 +86,26 @@ tbody tr:hover, tr.selected { background: #243028; }
 pre { white-space: pre-wrap; font-family: ui-monospace, "Cascadia Mono", monospace; font-size: 13px; color: #d5e4d4; }
 :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
+.review { display: grid; gap: 16px; margin-top: 18px; }
+.review section, .review article {
+  background: rgba(24, 32, 25, 0.92); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+}
+.review-hero { border-top: 3px solid var(--brass); }
+.review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.review-grid article { margin: 0; }
+.reference-seal {
+  display: inline-block; margin: 8px 0; padding: 6px 10px; border-radius: 999px;
+  background: #3a2218; color: #ffd7c8; border: 1px solid var(--vermilion); font-weight: 650;
+}
+.metrics { margin-top: 8px; }
+.metrics dd { font-size: 22px; font-variant-numeric: tabular-nums; }
+.review .table-wrap tbody tr { cursor: default; }
+.review ul, .review ol { margin: 8px 0 0; padding-left: 20px; }
+.review li { margin: 6px 0; }
+.review-aside-note { margin: 12px 0 0; }
+
 @media (max-width: 860px) {
+  .review-grid { grid-template-columns: 1fr; }
   .workspace, .detail { grid-template-columns: 1fr; }
   aside { position: static; }
   h1 { font-size: 28px; }

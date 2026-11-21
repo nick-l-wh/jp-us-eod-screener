@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { preflightCsv, toCsv, type PreflightReport } from "./csv";
 import { cohortLabel, diffLabel, formatNumber, formatRank, formatVolume, statusLabel } from "./format";
+import { Review } from "./Review";
 import {
   DEMO_DISCLAIMER,
   EMPTY_REAL_MESSAGE,
@@ -14,6 +15,7 @@ import {
 
 type Market = "US" | "JP";
 type Pane = "matches" | "diagnostics" | "rules";
+type Surface = "review" | "workspace";
 
 const EXTRA: Record<string, { key: string; label: string }[]> = {
   adx: [
@@ -48,6 +50,7 @@ const EXTRA: Record<string, { key: string; label: string }[]> = {
 };
 
 export function App() {
+  const [surface, setSurface] = useState<Surface>("review");
   const [demoOn, setDemoOn] = useState(false);
   const [demoSnap, setDemoSnap] = useState<Snapshot | null>(null);
   const [realSnap, setRealSnap] = useState<Snapshot | null>(null);
@@ -152,9 +155,17 @@ export function App() {
       <header className="top">
         <div>
           <p className="eyebrow">私人草稿 · 美股與日股 · 只限股票</p>
-          <h1>日美收市篩選</h1>
+          <h1 data-testid="page-title">{surface === "review" ? "2026-11-20 資料核對" : "日美收市篩選"}</h1>
         </div>
         <div className="top-actions">
+          <div className="segment" role="tablist" aria-label="頁面">
+            <button type="button" role="tab" data-testid="surface-review" aria-selected={surface === "review"} className={surface === "review" ? "active" : ""} onClick={() => setSurface("review")}>
+              2026-11-20 資料核對
+            </button>
+            <button type="button" role="tab" data-testid="surface-workspace" aria-selected={surface === "workspace"} className={surface === "workspace" ? "active" : ""} onClick={() => setSurface("workspace")}>
+              篩選工作台
+            </button>
+          </div>
           <button type="button" className={demoOn ? "toggle on" : "toggle"} aria-pressed={demoOn} data-testid="demo-toggle" onClick={() => setDemoOn((value) => !value)}>
             {demoOn ? "示範開" : "示範關"}
           </button>
@@ -164,13 +175,17 @@ export function App() {
           </label>
         </div>
       </header>
-      {showDemo && (
+      {surface === "workspace" && showDemo && (
         <div className="demo-banner" data-testid="demo-banner" role="status">
           {DEMO_DISCLAIMER}
         </div>
       )}
+      {surface === "review" && demoOn && (
+        <p className="quiet review-aside-note">示範開關只影響篩選工作台，不會改這頁的核對數字。</p>
+      )}
       {error && <div className="error-banner">{error}</div>}
-      <div className="workspace">
+      {surface === "review" && <Review onOpenWorkspace={() => setSurface("workspace")} />}
+      {surface === "workspace" && <div className="workspace">
         <aside>
           <section>
             <h2>市場</h2>
@@ -272,7 +287,7 @@ export function App() {
             <Rules scan={null} assumptions={rulesFallback ?? []} />
           )}
         </main>
-      </div>
+      </div>}
     </div>
   );
 }

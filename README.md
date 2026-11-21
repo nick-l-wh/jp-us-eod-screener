@@ -37,7 +37,7 @@ CI 見 `.github/workflows/ci.yml`，只在 push 和 pull request 執行，沒有
 cd web && npm run dev
 ```
 
-靜態預覽網址會是 `https://nick-l-wh.github.io/jp-us-eod-screener/`。`.github/workflows/pages.yml` 在草稿分支 `cursor/jp-us-eod-screener-draft-8d68` 被推上時，以 `VITE_BASE=/jp-us-eod-screener/` 建置 `web` 並上傳。本地與 CI 不設這個變數，仍用相對路徑。倉庫維持私人。工作流程權杖不能替你開啟 Pages：需要有管理權限的人在倉庫 Settings → Pages 把 Source 設成 GitHub Actions。開啟之後，這個網址只給能讀倉庫的已登入使用者。這不是行情排程。
+靜態預覽：`https://nick-l-wh.github.io/jp-us-eod-screener/`。打開先看到「2026-11-20 資料核對」，只列覆蓋、參考列數與價格水準，不放原始行情。篩選工作台仍預設空白，示範資料另外標明。`.github/workflows/pages.yml` 在草稿分支 `cursor/jp-us-eod-screener-draft-8d68` 被推上時，以 `VITE_BASE=/jp-us-eod-screener/` 建置 `web` 並上傳。本地與 CI 不設這個變數，仍用相對路徑。倉庫維持私人。這不是行情排程。頁上不提供整包行情下載。
 
 ## 命令列
 

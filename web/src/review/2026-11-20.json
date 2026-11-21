@@ -1,0 +1,105 @@
+{
+  "id": "2026-11-20-data-review",
+  "title": "2026-11-20 資料核對",
+  "target_session_date": "2026-11-20",
+  "compiled_at_asia_taipei": "2026-11-21 18:52:20",
+  "reference_label": "參考結果，非本引擎計算",
+  "engine_computed_scans": false,
+  "indicator_recalculated": false,
+  "scan_parity_claimed": false,
+  "raw_ohlcv_published": false,
+  "account_export_published": false,
+  "redistribution_verified": false,
+  "full_package_published": false,
+  "stockcharts_baseline": {
+    "market": "US",
+    "as_of": "2026-11-20",
+    "adjustment": "股息調整後的收市結果表",
+    "conditions_edited": false,
+    "row_sum": 174,
+    "unique_symbols": 170,
+    "scans": [
+      { "id": "adx", "name": "ADX", "rows": 0 },
+      { "id": "pullback", "name": "Pullback", "rows": 30 },
+      { "id": "squeeze", "name": "Squeeze On", "rows": 2 },
+      { "id": "turtle", "name": "Turtle Soup Plus One - buy", "rows": 129 },
+      { "id": "weak", "name": "Weak ADX", "rows": 9 },
+      { "id": "young", "name": "Young Trend", "rows": 4 }
+    ],
+    "notes": [
+      "六個列數來自 StockCharts 已儲存掃描的結果表，原文條件沒有改。",
+      "本引擎沒有用這批行情重算指標，也沒有產生這些命中。",
+      "ADX 結果表是 0 列。樣本只含結果表裡出現過的代號，不能證明全市場也是零命中，也不能當成引擎對等。",
+      "這個樣本看不出漏網，也看不出結果表以外的額外命中。"
+    ]
+  },
+  "us": {
+    "coverage_class": "有偏的對照樣本，不是美股全市場，也不是 SCTR 排名宇宙",
+    "source": "Yahoo Finance，經已發布的 yfinance 1.8.0 download()。auto_adjust 為 false。",
+    "close_adjustment": "Yahoo Close 只做分割調整，未做股息調整。",
+    "unique_baseline_symbols": 170,
+    "target_bar_present": 170,
+    "target_bar_missing": 0,
+    "window_start": "2026-10-12",
+    "window_end": "2026-11-20",
+    "window_sessions": 30,
+    "symbols_with_all_window_sessions": 170,
+    "warmup_at_least_200": 170,
+    "reported_bar_count_each": 1291,
+    "history_requested_from": "2021-10-01",
+    "probe": {
+      "symbol": "AAPL",
+      "role": "獨立可得性探測",
+      "has_target_bar": true,
+      "counted_as_hit": false
+    }
+  },
+  "jp": {
+    "source": "Asia Breadth 現有 Yahoo／yfinance 個股檔，依宇宙左連接。這次沒有重跑下載器。",
+    "universe": "JPX Prime／Standard／Growth 的 Domestic 普通股，含字母代碼。已排除指數與 ETF。",
+    "universe_timing": "現時成份，不是 2026-11-20 的歷史時點名單，有存活者偏差。",
+    "universe_size": 3700,
+    "target_bar_present": 3651,
+    "target_bar_missing": 49,
+    "target_bar_present_pct": 98.676,
+    "ohlc_inconsistent": 15,
+    "ohlc_inconsistent_note": "這 15 筆已標出，不當成乾淨列。",
+    "window_start": "2026-10-08",
+    "window_end": "2026-11-20",
+    "window_sessions": 30,
+    "symbols_with_all_window_sessions": 3651,
+    "warmup_at_least_200": 3666,
+    "warmup_at_least_300": 3637,
+    "warmup_note": "200 根與 300 根是宇宙成員在目標日或之前的歷史長度，不代表每一隻都有 11 月 20 日那根。",
+    "close_adjustment": "Close 只做分割調整，未做股息調整。AdjOpen／AdjHigh／AdjLow 按 AdjClose／Close 比例換算。",
+    "official_scan_parity": false,
+    "segments": [
+      { "name": "Prime", "universe": 1549, "has_target": 1543 },
+      { "name": "Standard", "universe": 1555, "has_target": 1515 },
+      { "name": "Growth", "universe": 596, "has_target": 593 }
+    ]
+  },
+  "price_comparison": {
+    "label": "只核對收市價與成交量水準，不是掃描準確率、走勢一致或指標對等",
+    "rows_compared": 174,
+    "close_abs_diff_at_most_0_01": 174,
+    "volume_exact": 1,
+    "volume_within_5pct": 174,
+    "baseline_adjustment": "StockCharts 結果表的 Close 是 2026-11-20 股息調整後的收市。",
+    "yahoo_adjustment": "對照用的是 Yahoo Close，只做分割調整。"
+  },
+  "provenance": [
+    "美股收集用 yfinance 1.8.0，end 不含當日，所以請求到 2026-11-21 才含 11 月 20 日。",
+    "日股沿用 Asia Breadth 已存的 Yahoo／yfinance 檔，原檔留在原處。",
+    "先前 Stooq 公開頁在收集環境遇到瀏覽器驗證，沒有繞過。",
+    "Yahoo 再分發權與 StockCharts 帳戶匯出權都未核實。原始行情與帳戶匯出 CSV 不放進這個網站或程式庫。"
+  ],
+  "still_open": [
+    "美股只覆蓋結果表裡的 170 個代號，不能拿來做全市場掃描或 SCTR 排名。",
+    "這次沒有重算指標，篩選工作台的命中仍是空白或你自己匯入的快照，不會填入上面的參考列數。",
+    "日股不是 StockCharts 官方日股掃描。",
+    "成交量口徑、SCTR 族群、缺市值，以及三條沒有括號的條件分組，都還沒核對完。",
+    "30 日窗口是價格歷史，不是連續 30 個交易日各跑一次掃描。",
+    "尚未接上行情供應商。此頁沒有整包下載。"
+  ]
+}
