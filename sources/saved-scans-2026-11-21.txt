@@ -1,0 +1,80 @@
+StockCharts saved scan text reviewed 2026-11-21.
+Copied from the editor raw clauses. No scan was run and no account was changed.
+Editor context: date offset 0, adjusted for dividends.
+These strings are the canonical source for the six predicates.
+The engine does not claim parser parity for the three ungrouped OR/AND scans.
+
+=== ADX — ID 4468405 ===
+[SCTR.large > 0] 
+or [SCTR.mid > 0] 
+and [roc(90) > 20] 
+and [Plus DI(14) > yesterday's max(25, Plus DI(14))]
+and [type is stock]
+and [Volume > 100000]
+and [SCTR > 70]
+
+=== Pullback — ID 4477104 ===
+[SCTR.large > 70]
+or [SCTR.mid > 70]
+and [roc(20) > 20]
+and [Plus DI(14) > 30]
+and [type is stock]
+rank by [Daily ULCER(10)]
+
+=== Squeeze On — ID 4536938 ===
+[type = stock]
+and [country is US]
+and [sma(20,volume) > 300000]
+and [close > sma(200,close)]
+and [sma(200,close) > 20 days ago sma(200,close)]
+and [Upper Kelt Chan(20,1.5,10) > Upper BB(20,2)]
+and [Lower Kelt Chan(20,1.5,10) < Lower BB(20,2)]
+and [BB Width(20,2) = min(63, BB Width(20,2))]
+and [Plus DI(14) < 20]
+and [Minus DI(14) < 20]
+and [market cap > 1,000]
+
+=== Turtle Soup Plus One - buy — ID 4554816 ===
+[type = stock]
+and [country is us]
+and [SMA(20, volume) > 500000]
+and [group is not ETF]
+and [close > 5]
+
+//  20 
+and [low = min(20, low)]
+
+//  20  3  OR 
+and [
+    [3 days ago low = 1 day ago min(20, low)] or
+    [4 days ago low = 1 day ago min(20, low)] or
+    [5 days ago low = 1 day ago min(20, low)] or
+    [6 days ago low = 1 day ago min(20, low)] or
+    [7 days ago low = 1 day ago min(20, low)] or
+    [8 days ago low = 1 day ago min(20, low)] or
+    [9 days ago low = 1 day ago min(20, low)] or
+    [10 days ago low = 1 day ago min(20, low)]
+]
+
+//  20 
+and [close <= 1 day ago min(20, low) * 1.005]
+
+=== Weak ADX — ID 4534703 ===
+[type is stock]
+and [Volume > 100000]
+and
+[
+ [SCTR.large > 0]
+ or [SCTR.mid > 0]
+]
+and [SCTR < 20]
+and [ADX Line(14) < 20]
+and [Plus DI(14) < yesterday's min(25, Plus DI(14))]
+and [market cap > 10,000]
+
+=== Young Trend — ID 4525267 ===
+[SCTR.large > 50]
+or [SCTR.mid > 50]
+and [roc(3) > 9]
+and [SMA(3,volume)>SMA(50,volume)*1.5]
+rank by ROC(3)
