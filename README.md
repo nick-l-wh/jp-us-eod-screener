@@ -105,7 +105,7 @@ OHLCV 欄位：`market,symbol,date,open,high,low,close,volume,adjustment`
 
 Pullback 的 Daily ULCER(10) 和 Young Trend 的 ROC(3) 只排序、不過濾。預設較大值在前，方向未經來源核對。
 
-Squeeze 的 `market cap > 1,000` 按來源的百萬美元，即大於 1e9 USD。Weak 的 `10,000` 即大於 1e10 USD。貨幣不是 USD 時該條款是未滿足依賴，不會換算成日圓。Turtle 的 `close > 5` 是美元，不會改成 5 日圓。
+Squeeze 的 `market cap > 1,000` 按來源的百萬美元，即大於 1e9 USD。Weak 的 `10,000` 即大於 1e10 USD。這兩個過濾一直生效，不能用下面的分層開關關掉。缺市值，或市值貨幣不是 USD，該列是未滿足依賴，不會變成命中，也不會把美元門檻換算成日圓。Squeeze 沒有 `close > 5`；那一條只在 Turtle。收市價可以低於 5 美元，只要高於 SMA(200) 就通過 Squeeze 的價格條款。Turtle 的 `close > 5` 是美元，日本市場整條不跑，不會改成 5 日圓。
 
 Young Trend 原文沒有股票條款。只留股票是引擎的宇宙政策，不是假裝原文有這一句。
 
@@ -140,7 +140,7 @@ Young Trend 原文沒有股票條款。只留股票是引擎的宇宙政策，�
 
 PPO 採用 (12, 26, 9)。權重表是這個參數；SCTR 正文曾把訊號線寫成 12 日 EMA。兩者不一致，這裡跟隨權重表和 PPO 頁的 9 日訊號線，不聲稱和官方分數一致。
 
-美國市值分層的公開數字寫在 `config/default.json`，但 `enabled` 是 false。那不是自動生效的官方門檻。日股沒有對應界線，請在宇宙檔填 `cohort`。
+`config/default.json` 裡 `cohort_thresholds.*.enabled` 預設是 false。這只表示：宇宙檔沒有 `cohort` 時，不要用市值自動分成大型或中型。它不是 Squeeze／Weak 市值過濾的開關。日股沒有官方分層，請在宇宙檔填 `cohort`。檔裡的美國數字只是停用的公開參考。
 
 ## 真實與示範
 
