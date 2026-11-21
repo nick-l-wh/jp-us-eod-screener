@@ -4,9 +4,11 @@
   "target_session_date": "2026-11-20",
   "compiled_at_asia_taipei": "2026-11-21 18:52:20",
   "reference_label": "參考結果，非本引擎計算",
-  "engine_computed_scans": false,
-  "indicator_recalculated": false,
+  "engine_computed_scans": true,
+  "indicator_recalculated": true,
   "scan_parity_claimed": false,
+  "data_version": "cloud-input-us-parity-2026-11-20",
+  "data_version_at_asia_taipei": "2026-11-21 20:36:53",
   "raw_ohlcv_published": false,
   "account_export_published": false,
   "redistribution_verified": false,
@@ -27,10 +29,10 @@
       { "id": "young", "name": "Young Trend", "rows": 4 }
     ],
     "notes": [
-      "六個列數來自 StockCharts 已儲存掃描的結果表，原文條件沒有改。",
-      "本引擎沒有用這批行情重算指標，也沒有產生這些命中。",
-      "ADX 結果表是 0 列。樣本只含結果表裡出現過的代號，不能證明全市場也是零命中，也不能當成引擎對等。",
-      "這個樣本看不出漏網，也看不出結果表以外的額外命中。"
+      "六個列數仍是參考結果表的列數，不是引擎確認命中。",
+      "引擎比較在六條結果頁，用股息與分割調整後的價格。這裡只保留覆蓋數字。",
+      "ADX 結果表是 0 列。樣本只含其他掃描出現過的代號，不能證明全市場也是零命中。",
+      "先前把 170 隻都寫成 1291 根，並把 174 列收市都寫成相差不超過 0.01。完整歷史重收後這兩句作廢。"
     ]
   },
   "us": {
@@ -38,15 +40,16 @@
     "source": "Yahoo Finance，經已發布的 yfinance 1.8.0 download()。auto_adjust 為 false。",
     "close_adjustment": "Yahoo Close 只做分割調整，未做股息調整。",
     "unique_baseline_symbols": 170,
+    "history_bars": 202950,
     "target_bar_present": 170,
     "target_bar_missing": 0,
-    "window_start": "2026-10-12",
-    "window_end": "2026-11-20",
-    "window_sessions": 30,
-    "symbols_with_all_window_sessions": 170,
-    "warmup_at_least_200": 170,
-    "reported_bar_count_each": 1291,
+    "target_close_null": ["SNDK"],
+    "target_close_null_note": "SNDK 在 2026-11-20 有其他欄位，但 Close 與 Adj Close 是空的。沒有用結果表的收市價填入，也沒有沿用前一日。",
+    "warmup_at_least_200": 165,
+    "warmup_under_200": ["OCTV", "SHAZ", "SKHU", "SKHY", "SUNB"],
+    "bars_1291": 149,
     "history_requested_from": "2021-10-01",
+    "revision": "完整歷史重收。不是先前那份只留在記憶體、磁碟只有 30 日的摘要。",
     "probe": {
       "symbol": "AAPL",
       "role": "獨立可得性探測",
@@ -81,10 +84,11 @@
   },
   "price_comparison": {
     "label": "只核對收市價與成交量水準，不是掃描準確率、走勢一致或指標對等",
-    "rows_compared": 174,
-    "close_abs_diff_at_most_0_01": 174,
-    "volume_exact": 1,
-    "volume_within_5pct": 174,
+    "reference_rows": 174,
+    "close_compared": 173,
+    "close_abs_diff_at_most_0_01": 173,
+    "close_uncompared_null": 1,
+    "volume_rechecked": false,
     "baseline_adjustment": "StockCharts 結果表的 Close 是 2026-11-20 股息調整後的收市。",
     "yahoo_adjustment": "對照用的是 Yahoo Close，只做分割調整。"
   },
@@ -96,7 +100,7 @@
   ],
   "still_open": [
     "美股只覆蓋結果表裡的 170 個代號，不能拿來做全市場掃描或 SCTR 排名。",
-    "這次沒有重算指標，篩選工作台的命中仍是空白或你自己匯入的快照，不會填入上面的參考列數。",
+    "六條結果頁有逐條比較。篩選工作台的示範資料仍然分開，不會填進這些參考列。",
     "日股不是 StockCharts 官方日股掃描。",
     "成交量口徑、SCTR 族群、缺市值，以及三條沒有括號的條件分組，都還沒核對完。",
     "30 日窗口是價格歷史，不是連續 30 個交易日各跑一次掃描。",

@@ -25,9 +25,10 @@ def test_review_counts_are_reference_not_engine_output():
     assert review["title"] == "2026-11-20 資料核對"
     assert review["target_session_date"] == "2026-11-20"
     assert review["reference_label"] == "參考結果，非本引擎計算"
-    assert review["engine_computed_scans"] is False
-    assert review["indicator_recalculated"] is False
+    assert review["engine_computed_scans"] is True
+    assert review["indicator_recalculated"] is True
     assert review["scan_parity_claimed"] is False
+    assert review["data_version"] == "cloud-input-us-parity-2026-11-20"
     rows = {item["id"]: item["rows"] for item in review["stockcharts_baseline"]["scans"]}
     assert rows == EXPECTED_ROWS
     assert sum(rows.values()) == review["stockcharts_baseline"]["row_sum"] == 174
@@ -38,10 +39,11 @@ def test_review_counts_are_reference_not_engine_output():
 def test_review_price_note_is_not_a_match_rate():
     review = _load()
     price = review["price_comparison"]
-    assert price["rows_compared"] == 174
-    assert price["close_abs_diff_at_most_0_01"] == 174
-    assert price["volume_exact"] == 1
-    assert price["volume_within_5pct"] == 174
+    assert price["reference_rows"] == 174
+    assert price["close_compared"] == 173
+    assert price["close_abs_diff_at_most_0_01"] == 173
+    assert price["close_uncompared_null"] == 1
+    assert price["volume_rechecked"] is False
     label = price["label"]
     assert "不是掃描準確率" in label
     assert "走勢一致" in label
@@ -60,7 +62,11 @@ def test_review_publishes_no_raw_prices_or_exports():
     assert review["us"]["probe"]["symbol"] == "AAPL"
     assert review["us"]["probe"]["counted_as_hit"] is False
     assert review["us"]["target_bar_present"] == 170
-    assert review["us"]["reported_bar_count_each"] == 1291
+    assert review["us"]["history_bars"] == 202950
+    assert review["us"]["warmup_at_least_200"] == 165
+    assert review["us"]["bars_1291"] == 149
+    assert review["us"]["target_close_null"] == ["SNDK"]
+    assert review["us"]["warmup_under_200"] == ["OCTV", "SHAZ", "SKHU", "SKHY", "SUNB"]
     assert review["jp"]["universe_size"] == 3700
     assert review["jp"]["target_bar_present"] == 3651
     assert review["jp"]["target_bar_missing"] == 49
@@ -85,9 +91,10 @@ def test_review_publishes_no_raw_prices_or_exports():
     assert len(blob) < 20_000
 
 
-def test_review_is_the_landing_and_demo_stays_separate():
+def test_results_are_the_landing_and_demo_stays_separate():
     app = APP_PATH.read_text(encoding="utf-8")
-    assert 'useState<Surface>("review")' in app
+    assert 'return "pullback"' in app
+    assert "ScanResults" in app
     assert "2026-11-20 資料核對" in app
     assert "篩選工作台" in app
     demo = json.loads(DEMO_PATH.read_text(encoding="utf-8"))

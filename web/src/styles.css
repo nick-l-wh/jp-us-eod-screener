@@ -104,6 +104,23 @@ pre { white-space: pre-wrap; font-family: ui-monospace, "Cascadia Mono", monospa
 .review li { margin: 6px 0; }
 .review-aside-note { margin: 12px 0 0; }
 
+.results-app .scans a {
+  display: inline-flex; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--raise); color: var(--text); text-decoration: none;
+}
+.results-app .scans a.active { background: var(--brass); color: var(--ink); }
+.session-date { margin: 0; font-size: 22px; font-variant-numeric: tabular-nums; }
+.results-count { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; font-variant-numeric: tabular-nums; }
+.results-count strong { font-size: 18px; }
+.column-picker, .pager { display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0 12px; align-items: center; }
+.dense td, .dense th { padding: 5px 8px; font-size: 13px; }
+.dense td.reason { white-space: normal; min-width: 280px; max-width: 520px; }
+.finding { margin: 0 0 12px; line-height: 1.5; }
+.detail-row td { white-space: normal; background: var(--raise-2); }
+.predicate h3 { margin: 8px 0 4px; font-size: 14px; }
+.provenance { margin-top: 16px; }
+.results-app .toolbar select { background: var(--raise); border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; }
+
 @media (max-width: 860px) {
   .review-grid { grid-template-columns: 1fr; }
   .workspace, .detail { grid-template-columns: 1fr; }

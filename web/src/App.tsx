@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { preflightCsv, toCsv, type PreflightReport } from "./csv";
 import { cohortLabel, diffLabel, formatNumber, formatRank, formatVolume, statusLabel } from "./format";
 import { Review } from "./Review";
+import { SCAN_ROUTES, ScanResults } from "./ScanResults";
 import {
   DEMO_DISCLAIMER,
   EMPTY_REAL_MESSAGE,
@@ -49,8 +50,25 @@ const EXTRA: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
+function usePageRoute(): string {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+  const id = hash.replace(/^#\/?/, "").split(/[?#]/)[0];
+  if (id === "review" || id === "workspace") return id;
+  if (SCAN_ROUTES.some((item) => item.id === id)) return id;
+  return "pullback";
+}
+
 export function App() {
+  const route = usePageRoute();
   const [surface, setSurface] = useState<Surface>("review");
+  useEffect(() => {
+    if (route === "review" || route === "workspace") setSurface(route);
+  }, [route]);
   const [demoOn, setDemoOn] = useState(false);
   const [demoSnap, setDemoSnap] = useState<Snapshot | null>(null);
   const [realSnap, setRealSnap] = useState<Snapshot | null>(null);
@@ -150,6 +168,8 @@ export function App() {
 
   const selectedRow = rows.find((row) => row.qualified_symbol === selected) ?? result?.dropped.find((row) => row.qualified_symbol === selected) ?? null;
 
+  if (route !== "review" && route !== "workspace") return <ScanResults key={route} scanId={route} />;
+
   return (
     <div className="app">
       <header className="top">
@@ -159,10 +179,10 @@ export function App() {
         </div>
         <div className="top-actions">
           <div className="segment" role="tablist" aria-label="頁面">
-            <button type="button" role="tab" data-testid="surface-review" aria-selected={surface === "review"} className={surface === "review" ? "active" : ""} onClick={() => setSurface("review")}>
+            <button type="button" role="tab" data-testid="surface-review" aria-selected={surface === "review"} className={surface === "review" ? "active" : ""} onClick={() => { window.location.hash = "/review"; }}>
               2026-11-20 資料核對
             </button>
-            <button type="button" role="tab" data-testid="surface-workspace" aria-selected={surface === "workspace"} className={surface === "workspace" ? "active" : ""} onClick={() => setSurface("workspace")}>
+            <button type="button" role="tab" data-testid="surface-workspace" aria-selected={surface === "workspace"} className={surface === "workspace" ? "active" : ""} onClick={() => { window.location.hash = "/workspace"; }}>
               篩選工作台
             </button>
           </div>
@@ -184,7 +204,7 @@ export function App() {
         <p className="quiet review-aside-note">示範開關只影響篩選工作台，不會改這頁的核對數字。</p>
       )}
       {error && <div className="error-banner">{error}</div>}
-      {surface === "review" && <Review onOpenWorkspace={() => setSurface("workspace")} />}
+      {surface === "review" && <Review onOpenWorkspace={() => { window.location.hash = "/workspace"; }} />}
       {surface === "workspace" && <div className="workspace">
         <aside>
           <section>

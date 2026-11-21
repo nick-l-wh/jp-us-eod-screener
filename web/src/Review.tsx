@@ -10,8 +10,8 @@ export function Review({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
       <section className="review-hero">
         <p className="eyebrow">目標交易日 {review.target_session_date} · 台北彙整 {review.compiled_at_asia_taipei}</p>
         <p className="reference-seal" data-testid="review-reference">{review.reference_label}</p>
-        <p>
-          日股已有目標日與 30 個交易日的價格覆蓋。美股只收集了 StockCharts 結果表裡出現過的代號，用來核對資料，不是全市場掃描。
+          <p>
+          六條結果在別頁。這一頁只更正覆蓋數字。美股是結果表裡的 170 個代號，不是全市場。
         </p>
       </section>
 
@@ -21,11 +21,13 @@ export function Review({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
           <p className="quiet">{review.us.coverage_class}</p>
           <dl className="metrics">
             <div><dt>結果表獨特代號</dt><dd>{review.us.unique_baseline_symbols}</dd></div>
-            <div><dt>有 11 月 20 日</dt><dd>{review.us.target_bar_present} · 缺 {review.us.target_bar_missing}</dd></div>
-            <div><dt>30 個交易日</dt><dd>{review.us.window_start} 至 {review.us.window_end}</dd></div>
-            <div><dt>窗口齊全</dt><dd>{review.us.symbols_with_all_window_sessions}</dd></div>
-            <div><dt>至少 200 根</dt><dd>{review.us.warmup_at_least_200}，各 {review.us.reported_bar_count_each.toLocaleString("zh-HK")} 根</dd></div>
+            <div><dt>有 11 月 20 日</dt><dd>{review.us.target_bar_present} · 缺列 {review.us.target_bar_missing}</dd></div>
+            <div><dt>日線根數</dt><dd>{review.us.history_bars.toLocaleString("zh-HK")}</dd></div>
+            <div><dt>至少 200 根</dt><dd>{review.us.warmup_at_least_200}</dd></div>
+            <div><dt>剛好 1291 根</dt><dd>{review.us.bars_1291}</dd></div>
+            <div><dt>目標日收市是空的</dt><dd>{review.us.target_close_null.join("、")}</dd></div>
           </dl>
+          <p className="quiet">{review.us.revision} {review.us.target_close_null_note}</p>
           <p className="quiet">{review.us.close_adjustment} 來源：{review.us.source}</p>
           <p data-testid="review-probe">
             {review.us.probe.symbol} 是{review.us.probe.role}，有目標日線，但不是掃描命中，沒有計入上面的列數。
@@ -97,10 +99,9 @@ export function Review({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
         <h2>收市價與成交量水準</h2>
         <p className="reference-seal">{review.price_comparison.label}</p>
         <dl className="metrics">
-          <div><dt>比較列</dt><dd>{review.price_comparison.rows_compared}</dd></div>
+          <div><dt>可比較收市</dt><dd>{review.price_comparison.close_compared}</dd></div>
           <div><dt>收市絕對差 ≤ 0.01</dt><dd>{review.price_comparison.close_abs_diff_at_most_0_01}</dd></div>
-          <div><dt>成交量完全相同</dt><dd>{review.price_comparison.volume_exact}</dd></div>
-          <div><dt>成交量相差在 5% 內</dt><dd>{review.price_comparison.volume_within_5pct}</dd></div>
+          <div><dt>收市是空的，沒有比較</dt><dd>{review.price_comparison.close_uncompared_null}</dd></div>
         </dl>
         <p>{review.price_comparison.baseline_adjustment} {review.price_comparison.yahoo_adjustment}</p>
       </section>
